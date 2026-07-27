@@ -36,11 +36,11 @@ class SecurityProfileInline(admin.StackedInline):
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     fieldsets = BaseUserAdmin.fieldsets + (
-        ('Platform Details', {'fields': ('role', 'phone_number',
-         'alternate_phone', 'address', 'profile_picture', 'is_verified')}),
+        ('Platform Details', {'fields': ('role', 'phone_number', 'age',
+         'alternate_phone', 'address', 'is_verified')}),
     )
     add_fieldsets = BaseUserAdmin.add_fieldsets + (
-        ('Platform Details', {'fields': ('role', 'phone_number',
+        ('Platform Details', {'fields': ('role', 'phone_number', 'age',
          'alternate_phone', 'address', 'is_verified')}),
     )
     list_display = ('username', 'email', 'first_name', 'last_name',
@@ -53,7 +53,7 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(ResidentProfile)
 class ResidentProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'blood_group', 'is_senior_citizen', 'is_dependent')
+    list_display = ('user', 'blood_group', 'is_senior_citizen')
     search_fields = ('user__username', 'user__first_name', 'user__last_name')
 
 

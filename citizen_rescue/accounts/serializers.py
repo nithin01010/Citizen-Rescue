@@ -83,21 +83,21 @@ class RegisterSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         role = validated_data.get('role', User.Role.RESIDENT)
 
-        blood_group = validated_data.pop('blood_group')
-        emergency_notes = validated_data.pop('emergency_notes')
-        medical_conditions = validated_data.pop('medical_conditions')
-        is_senior_citizen = validated_data.pop('is_senior_citizen')
+        blood_group = validated_data.pop('blood_group', None)
+        emergency_notes = validated_data.pop('emergency_notes', None)
+        medical_conditions = validated_data.pop('medical_conditions', None)
+        is_senior_citizen = validated_data.pop('is_senior_citizen', False)
 
-        occupation = validated_data.pop('occupation')
-        relation_notes = validated_data.pop('relation_notes')
+        occupation = validated_data.pop('occupation', None)
+        relation_notes = validated_data.pop('relation_notes', None)
 
-        skills = validated_data.pop('skills')
-        id_proof_type = validated_data.pop('id_proof_type')
-        id_proof_number = validated_data.pop('id_proof_number')
+        skills = validated_data.pop('skills', None)
+        id_proof_type = validated_data.pop('id_proof_type', None)
+        id_proof_number = validated_data.pop('id_proof_number', None)
 
-        badge_number = validated_data.pop('badge_number')
-        assigned_gate = validated_data.pop('assigned_gate')
-        shift_timing = validated_data.pop('shift_timing')
+        badge_number = validated_data.pop('badge_number', None)
+        assigned_gate = validated_data.pop('assigned_gate', None)
+        shift_timing = validated_data.pop('shift_timing', None)
 
         user = User.objects.create_user(password=password, **validated_data)
 

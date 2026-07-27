@@ -13,7 +13,7 @@ from .serializers import (
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
-        data.pop('refresh')
+        data.pop('refresh', None)
         return data
 
 

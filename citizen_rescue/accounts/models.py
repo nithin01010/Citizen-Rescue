@@ -24,6 +24,8 @@ class User(AbstractUser):
     # )
     is_verified = models.BooleanField(default=False)
 
+    REQUIRED_FIELDS = ['email', 'phone_number', 'age']
+
 
 class ResidentProfile(models.Model):
     user = models.OneToOneField(
