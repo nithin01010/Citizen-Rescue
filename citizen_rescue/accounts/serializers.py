@@ -42,9 +42,35 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name', 'role',
-            'phone_number', 'alternate_phone', 'address', 'profile_picture',
-            'is_verified', 'created_at', 'updated_at',
-            'resident_profile', 'guardian_profile', 'volunteer_profile',
-            'security_profile'
+            'phone_number', 'age', 'alternate_phone', 'address',
+            'is_verified', 'resident_profile', 'guardian_profile',
+            'volunteer_profile', 'security_profile'
         ]
-        read_only_fields = ['id', 'is_verified', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'is_verified']
+
+
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+
+    class Meta:
+        model = User
+        fields = [
+            'username', 'email', 'password', 'first_name', 'last_name',
+            'role', 'phone_number', 'age', 'alternate_phone', 'address'
+        ]
+
+    def create(self, validated_data):
+        password = validated_data.pop('password')
+        role = validated_data.get('role', User.Role.RESIDENT)
+        user = User.objects.create_user(password=password, **validated_data)
+
+        if role == User.Role.RESIDENT:
+            ResidentProfile.objects.get_or_create(user=user)
+        elif role == User.Role.GUARDIAN:
+            GuardianProfile.objects.get_or_create(user=user)
+        elif role == User.Role.VOLUNTEER:
+            VolunteerProfile.objects.get_or_create(user=user)
+        elif role == User.Role.SECURITY:
+            SecurityProfile.objects.get_or_create(user=user)
+
+        return user
