@@ -9,10 +9,10 @@ db.sqlite3-journal
 
 # Environments
 .env
+.env.example
 .venv
 env/
 venv/
 ENV/
 
-# User custom ignores
 citizen
