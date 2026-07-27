@@ -1,28 +1,19 @@
-from rest_framework import viewsets, generics, permissions, status
-from rest_framework.response import Response
+from rest_framework import viewsets, generics, permissions
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import (
-    User,
-    ResidentProfile,
-    GuardianProfile,
-    VolunteerProfile,
-    SecurityProfile,
+    User, ResidentProfile, GuardianProfile, VolunteerProfile, SecurityProfile
 )
 from .serializers import (
-    UserSerializer,
-    RegisterSerializer,
-    ResidentProfileSerializer,
-    GuardianProfileSerializer,
-    VolunteerProfileSerializer,
-    SecurityProfileSerializer,
+    UserSerializer, RegisterSerializer, ResidentProfileSerializer,
+    GuardianProfileSerializer, VolunteerProfileSerializer, SecurityProfileSerializer
 )
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
-        data.pop('refresh', None)
+        data.pop('refresh')
         return data
 
 
@@ -32,18 +23,8 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
-    permission_classes = [permissions.AllowAny]
     serializer_class = RegisterSerializer
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        user_data = UserSerializer(user).data
-        return Response({
-            "message": "User registered successfully",
-            "user": user_data
-        }, status=status.HTTP_201_CREATED)
+    permission_classes = [permissions.AllowAny]
 
 
 class UserProfileView(generics.RetrieveUpdateAPIView):

@@ -16,7 +16,7 @@ router.register(r'security', SecurityProfileViewSet)
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='auth_register'),
-    path('login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('login/', CustomTokenObtainPairView.as_view(), name='token_obtain'),
     path('me/', UserProfileView.as_view(), name='user_profile'),
     path('', include(router.urls)),
 ]
