@@ -6,6 +6,7 @@ from .models import (
     GuardianProfile,
     VolunteerProfile,
     SecurityProfile,
+    EmergencyContact,
 )
 
 
@@ -76,3 +77,12 @@ class SecurityProfileAdmin(admin.ModelAdmin):
                     'shift_timing')
     search_fields = ('user__username', 'user__first_name', 'user__last_name',
                      'badge_number')
+
+
+@admin.register(EmergencyContact)
+class EmergencyContactAdmin(admin.ModelAdmin):
+    list_display = ('resident', 'guardian', 'name', 'phone_number', 'relationship', 'priority', 'is_verified')
+    list_filter = ('priority', 'is_verified', 'relationship')
+    search_fields = ('resident__username', 'resident__first_name', 'resident__last_name',
+                     'name', 'phone_number')
+

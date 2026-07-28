@@ -1,12 +1,14 @@
+from django.db import models
 from rest_framework import viewsets, generics, permissions
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import (
-    User, ResidentProfile, GuardianProfile, VolunteerProfile, SecurityProfile
+    User, ResidentProfile, GuardianProfile, VolunteerProfile, SecurityProfile, EmergencyContact
 )
 from .serializers import (
     UserSerializer, RegisterSerializer, ResidentProfileSerializer,
-    GuardianProfileSerializer, VolunteerProfileSerializer, SecurityProfileSerializer
+    GuardianProfileSerializer, VolunteerProfileSerializer, SecurityProfileSerializer,
+    EmergencyContactSerializer
 )
 
 
@@ -63,3 +65,18 @@ class SecurityProfileViewSet(viewsets.ModelViewSet):
     queryset = SecurityProfile.objects.all()
     serializer_class = SecurityProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+
+class EmergencyContactViewSet(viewsets.ModelViewSet):
+    serializer_class = EmergencyContactSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff or user.role == User.Role.ADMIN:
+            return EmergencyContact.objects.all()
+        return EmergencyContact.objects.filter(models.Q(resident=user) | models.Q(guardian=user))
+
+    def perform_create(self, serializer):
+        serializer.save(resident=self.request.user)
+

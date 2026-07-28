@@ -4,7 +4,7 @@ from .views import (
     CustomTokenObtainPairView,
     RegisterView, UserProfileView,
     UserViewSet, ResidentProfileViewSet, GuardianProfileViewSet,
-    VolunteerProfileViewSet, SecurityProfileViewSet
+    VolunteerProfileViewSet, SecurityProfileViewSet, EmergencyContactViewSet
 )
 
 router = DefaultRouter()
@@ -13,6 +13,8 @@ router.register(r'residents', ResidentProfileViewSet)
 router.register(r'guardians', GuardianProfileViewSet)
 router.register(r'volunteers', VolunteerProfileViewSet)
 router.register(r'security', SecurityProfileViewSet)
+router.register(r'emergency-contacts', EmergencyContactViewSet, basename='emergencycontact')
+
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='auth_register'),

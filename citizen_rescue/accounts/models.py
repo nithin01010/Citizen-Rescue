@@ -100,3 +100,44 @@ class SecurityProfile(models.Model):
     def __str__(self):
         return f"""Security Personnel:
         {self.user.username} (Badge: {self.badge_number})"""
+
+
+class EmergencyContact(models.Model):
+    class Priority(models.TextChoices):
+        PRIMARY = 'PRIMARY', 'Primary Guardian'
+        SECONDARY = 'SECONDARY', 'Secondary Guardian'
+        EMERGENCY = 'EMERGENCY', 'Emergency Contact'
+
+    resident = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='emergency_contacts',
+        limit_choices_to={'role': User.Role.RESIDENT}
+    )
+    guardian = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='guardian_contacts',
+        limit_choices_to={'role': User.Role.GUARDIAN}
+    )
+    name = models.CharField(max_length=100)
+    phone_number = models.CharField(max_length=15)
+    relationship = models.CharField(max_length=50)
+    priority = models.CharField(
+        max_length=20,
+        choices=Priority.choices,
+        default=Priority.PRIMARY
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['resident', 'priority'],
+                name='unique_resident_contact_priority'
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.resident.username}'s {self.priority} Contact: {self.name}"

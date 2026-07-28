@@ -4,7 +4,8 @@ from .models import (
     ResidentProfile,
     GuardianProfile,
     VolunteerProfile,
-    SecurityProfile
+    SecurityProfile,
+    EmergencyContact
 )
 
 
@@ -30,6 +31,29 @@ class SecurityProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = SecurityProfile
         fields = '__all__'
+
+
+class EmergencyContactSerializer(serializers.ModelSerializer):
+    resident_name = serializers.CharField(source='resident.username', read_only=True)
+    guardian_name = serializers.CharField(source='guardian.username', read_only=True, default=None)
+
+    class Meta:
+        model = EmergencyContact
+        fields = [
+            'id', 'resident', 'resident_name', 'guardian', 'guardian_name',
+            'name', 'phone_number', 'relationship', 'priority', 'is_verified'
+        ]
+        read_only_fields = ['resident', 'is_verified']
+
+    def validate(self, attrs):
+        guardian = attrs.get('guardian')
+        if guardian:
+            if not attrs.get('name'):
+                attrs['name'] = f"{guardian.first_name} {guardian.last_name}".strip() or guardian.username
+            if not attrs.get('phone_number'):
+                attrs['phone_number'] = guardian.phone_number
+        return attrs
+
 
 
 class UserSerializer(serializers.ModelSerializer):
