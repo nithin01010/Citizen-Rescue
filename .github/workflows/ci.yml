@@ -25,6 +25,8 @@ jobs:
         pip install -r citizen_rescue/requirements.txt
 
     - name: Run Django Tests
+      env:
+        USE_POSTGRES: 'False'
       run: |
         cd citizen_rescue
         python manage.py test
