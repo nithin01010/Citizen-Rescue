@@ -44,14 +44,38 @@ class EmergencyContactSerializer(serializers.ModelSerializer):
             'name', 'phone_number', 'relationship', 'priority', 'is_verified'
         ]
         read_only_fields = ['resident', 'is_verified']
+        extra_kwargs = {
+            'name': {'required': False},
+            'phone_number': {'required': False}
+        }
 
     def validate(self, attrs):
+        request = self.context.get('request')
+        if request and request.user:
+            resident = request.user
+            priority = attrs.get('priority', 'PRIMARY')
+            
+            queryset = EmergencyContact.objects.filter(resident=resident, priority=priority)
+            if self.instance:
+                queryset = queryset.exclude(pk=self.instance.pk)
+            
+            if queryset.exists():
+                raise serializers.ValidationError({
+                    "priority": f"An emergency contact with priority '{priority}' already exists for this resident."
+                })
+
         guardian = attrs.get('guardian')
         if guardian:
             if not attrs.get('name'):
                 attrs['name'] = f"{guardian.first_name} {guardian.last_name}".strip() or guardian.username
             if not attrs.get('phone_number'):
                 attrs['phone_number'] = guardian.phone_number
+        else:
+            if not attrs.get('name') or not attrs.get('phone_number'):
+                raise serializers.ValidationError({
+                    "name": "This field is required when no guardian is specified.",
+                    "phone_number": "This field is required when no guardian is specified."
+                })
         return attrs
 
 
