@@ -10,31 +10,43 @@ from .models import (
 )
 
 
-class ResidentProfileSerializer(serializers.ModelSerializer):
+class OptimizedModelSerializer(serializers.ModelSerializer):
+    def update(self, instance, validated_data):
+        updated_fields = []
+        for attr, value in validated_data.items():
+            if getattr(instance, attr) != value:
+                setattr(instance, attr, value)
+                updated_fields.append(attr)
+        if updated_fields:
+            instance.save(update_fields=updated_fields)
+        return instance
+
+
+class ResidentProfileSerializer(OptimizedModelSerializer):
     class Meta:
         model = ResidentProfile
         fields = '__all__'
 
 
-class GuardianProfileSerializer(serializers.ModelSerializer):
+class GuardianProfileSerializer(OptimizedModelSerializer):
     class Meta:
         model = GuardianProfile
         fields = '__all__'
 
 
-class VolunteerProfileSerializer(serializers.ModelSerializer):
+class VolunteerProfileSerializer(OptimizedModelSerializer):
     class Meta:
         model = VolunteerProfile
         fields = '__all__'
 
 
-class SecurityProfileSerializer(serializers.ModelSerializer):
+class SecurityProfileSerializer(OptimizedModelSerializer):
     class Meta:
         model = SecurityProfile
         fields = '__all__'
 
 
-class EmergencyContactSerializer(serializers.ModelSerializer):
+class EmergencyContactSerializer(OptimizedModelSerializer):
     resident_name = serializers.CharField(source='resident.username', read_only=True)
     guardian_name = serializers.CharField(source='guardian.username', read_only=True, default=None)
 
@@ -81,7 +93,7 @@ class EmergencyContactSerializer(serializers.ModelSerializer):
 
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(OptimizedModelSerializer):
     resident_profile = ResidentProfileSerializer(read_only=True)
     guardian_profile = GuardianProfileSerializer(read_only=True)
     volunteer_profile = VolunteerProfileSerializer(read_only=True)
