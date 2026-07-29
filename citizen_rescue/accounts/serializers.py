@@ -5,7 +5,8 @@ from .models import (
     GuardianProfile,
     VolunteerProfile,
     SecurityProfile,
-    EmergencyContact
+    EmergencyContact,
+    Flat,
 )
 
 
@@ -98,6 +99,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    flat = serializers.PrimaryKeyRelatedField(queryset=Flat.objects.all(), required=False, write_only=True)
     blood_group = serializers.CharField(required=False, write_only=True)
     emergency_notes = serializers.CharField(required=False, write_only=True)
     medical_conditions = serializers.CharField(required=False, write_only=True)
@@ -120,6 +122,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = [
             'username', 'email', 'password', 'first_name', 'last_name',
             'role', 'phone_number', 'age', 'alternate_phone', 'address',
+            'flat',
             'blood_group', 'emergency_notes', 'medical_conditions',
             'is_senior_citizen',
             'occupation', 'relation_notes',
@@ -131,6 +134,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         role = validated_data.get('role', User.Role.RESIDENT)
 
+        flat = validated_data.pop('flat', None)
         blood_group = validated_data.pop('blood_group', None)
         emergency_notes = validated_data.pop('emergency_notes', None)
         medical_conditions = validated_data.pop('medical_conditions', None)
@@ -151,7 +155,9 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         if role == User.Role.RESIDENT:
             ResidentProfile.objects.create(
-                user=user, blood_group=blood_group,
+                user=user,
+                flat=flat,
+                blood_group=blood_group,
                 emergency_notes=emergency_notes,
                 medical_conditions=medical_conditions,
                 is_senior_citizen=is_senior_citizen

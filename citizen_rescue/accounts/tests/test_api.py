@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from accounts.models import (
-    ResidentProfile, GuardianProfile, VolunteerProfile, SecurityProfile, EmergencyContact
+    ResidentProfile, GuardianProfile, VolunteerProfile, SecurityProfile, EmergencyContact, Block, Flat
 )
 
 User = get_user_model()
@@ -32,6 +32,31 @@ class RegistrationTests(APITestCase):
         self.assertTrue(ResidentProfile.objects.filter(user=user).exists())
         profile = user.resident_profile
         self.assertEqual(profile.blood_group, "O+")
+
+    def test_register_resident_with_flat(self):
+        # Create society, block and flat
+        from accounts.models import Society
+        society = Society.objects.create(name="Apex Society", address="123 Road")
+        block = Block.objects.create(name="Block C", society=society)
+        flat = Flat.objects.create(block=block, flat_number="301")
+        
+        url = reverse('auth_register')
+        data = {
+            "username": "resident_flat",
+            "email": "resident_flat@example.com",
+            "password": "Password123!",
+            "first_name": "Flat",
+            "last_name": "Owner",
+            "role": "RESIDENT",
+            "phone_number": "9998881111",
+            "age": 32,
+            "flat": flat.id
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = User.objects.get(username="resident_flat")
+        self.assertEqual(user.resident_profile.flat, flat)
+
 
     def test_register_guardian(self):
         url = reverse('auth_register')
@@ -266,3 +291,54 @@ class EmergencyContactTests(APITestCase):
         }
         response = self.client.post(self.url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_verify_emergency_contact_by_guardian(self):
+        contact = EmergencyContact.objects.create(
+            resident=self.resident,
+            guardian=self.guardian,
+            name="Guardian One",
+            phone_number="0987654321",
+            relationship="Father",
+            priority="PRIMARY"
+        )
+        verify_url = reverse('emergencycontact-verify', kwargs={'pk': contact.pk})
+        
+        # Resident cannot verify the contact
+        self.client.force_authenticate(user=self.resident)
+        response = self.client.post(verify_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        
+        # Guardian can verify
+        self.client.force_authenticate(user=self.guardian)
+        response = self.client.post(verify_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        contact.refresh_from_db()
+        self.assertTrue(contact.is_verified)
+
+    def test_profile_permissions_owner_only_edits(self):
+        # Create ResidentProfile for resident (so it has user profile detail)
+        # resident profile exists because we created it, wait!
+        # In setUp, self.resident is created using create_user. It does NOT automatically get a ResidentProfile!
+        # Let's create it in this test method or inside setUp.
+        # Actually, let's create a ResidentProfile for self.resident first:
+        resident1_profile = ResidentProfile.objects.create(
+            user=self.resident,
+            blood_group="O+"
+        )
+        
+        # Authenticate as other_user
+        self.client.force_authenticate(user=self.other_user)
+        profile_detail_url = reverse('residentprofile-detail', kwargs={'pk': resident1_profile.pk})
+        
+        data = {"blood_group": "A-"}
+        response = self.client.patch(profile_detail_url, data, format='json')
+        # Should be forbidden
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        
+        # Resident themselves can edit
+        self.client.force_authenticate(user=self.resident)
+        response = self.client.patch(profile_detail_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        resident1_profile.refresh_from_db()
+        self.assertEqual(resident1_profile.blood_group, "A-")
+

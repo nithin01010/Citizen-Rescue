@@ -1,7 +1,10 @@
 from django.db import models
-from rest_framework import viewsets, generics, permissions
+from rest_framework import viewsets, generics, permissions, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+from .permissions import IsOwnerOrAdminOrReadOnly
 from .models import (
     User, ResidentProfile, GuardianProfile, VolunteerProfile, SecurityProfile, EmergencyContact
 )
@@ -40,31 +43,31 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdminOrReadOnly]
 
 
 class ResidentProfileViewSet(viewsets.ModelViewSet):
     queryset = ResidentProfile.objects.all()
     serializer_class = ResidentProfileSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdminOrReadOnly]
 
 
 class GuardianProfileViewSet(viewsets.ModelViewSet):
     queryset = GuardianProfile.objects.all()
     serializer_class = GuardianProfileSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdminOrReadOnly]
 
 
 class VolunteerProfileViewSet(viewsets.ModelViewSet):
     queryset = VolunteerProfile.objects.all()
     serializer_class = VolunteerProfileSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdminOrReadOnly]
 
 
 class SecurityProfileViewSet(viewsets.ModelViewSet):
     queryset = SecurityProfile.objects.all()
     serializer_class = SecurityProfileSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdminOrReadOnly]
 
 
 class EmergencyContactViewSet(viewsets.ModelViewSet):
@@ -79,4 +82,21 @@ class EmergencyContactViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(resident=self.request.user)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def verify(self, request, pk=None):
+        contact = self.get_object()
+        
+        # Only the designated guardian can verify the contact
+        if contact.guardian != request.user:
+            return Response(
+                {"detail": "Only the designated guardian can verify this contact."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        contact.is_verified = True
+        contact.save()
+        
+        serializer = self.get_serializer(contact)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
