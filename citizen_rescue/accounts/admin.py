@@ -7,6 +7,9 @@ from .models import (
     VolunteerProfile,
     SecurityProfile,
     EmergencyContact,
+    Block,
+    Flat,
+    Society,
 )
 
 
@@ -54,8 +57,9 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(ResidentProfile)
 class ResidentProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'blood_group', 'is_senior_citizen')
-    search_fields = ('user__username', 'user__first_name', 'user__last_name')
+    list_display = ('user', 'flat', 'blood_group', 'is_senior_citizen')
+    list_filter = ('flat__block', 'is_senior_citizen', 'blood_group')
+    search_fields = ('user__username', 'user__first_name', 'user__last_name', 'flat__flat_number')
 
 
 @admin.register(GuardianProfile)
@@ -85,4 +89,29 @@ class EmergencyContactAdmin(admin.ModelAdmin):
     list_filter = ('priority', 'is_verified', 'relationship')
     search_fields = ('resident__username', 'resident__first_name', 'resident__last_name',
                      'name', 'phone_number')
+
+
+@admin.register(Society)
+class SocietyAdmin(admin.ModelAdmin):
+    list_display = ('name', 'address')
+    search_fields = ('name',)
+
+
+@admin.register(Block)
+class BlockAdmin(admin.ModelAdmin):
+    list_display = ('name', 'society')
+    list_filter = ('society',)
+    search_fields = ('name', 'society__name')
+
+
+@admin.register(Flat)
+class FlatAdmin(admin.ModelAdmin):
+    list_display = ('flat_number', 'block', 'get_society')
+    list_filter = ('block__society', 'block')
+    search_fields = ('flat_number', 'block__name', 'block__society__name')
+
+    @admin.display(ordering='block__society', description='Society')
+    def get_society(self, obj):
+        return obj.block.society.name
+
 

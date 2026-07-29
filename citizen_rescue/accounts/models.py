@@ -27,12 +27,59 @@ class User(AbstractUser):
     REQUIRED_FIELDS = ['email', 'phone_number', 'age']
 
 
+class Society(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    address = models.TextField()
+
+    def __str__(self):
+        return self.name
+
+
+class Block(models.Model):
+    society = models.ForeignKey(Society, on_delete=models.CASCADE, related_name='blocks')
+    name = models.CharField(max_length=50)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['society', 'name'],
+                name='unique_society_block'
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.society.name} - {self.name}"
+
+
+class Flat(models.Model):
+    block = models.ForeignKey(Block, on_delete=models.CASCADE, related_name='flats')
+    flat_number = models.CharField(max_length=10)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['block', 'flat_number'],
+                name='unique_block_flat'
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.block.name} - {self.flat_number}"
+
+
 class ResidentProfile(models.Model):
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
         related_name='resident_profile',
         limit_choices_to={'role': User.Role.RESIDENT}
+    )
+    flat = models.ForeignKey(
+        Flat,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='residents'
     )
     emergency_notes = models.TextField(
         blank=True,
@@ -106,7 +153,7 @@ class EmergencyContact(models.Model):
     class Priority(models.TextChoices):
         PRIMARY = 'PRIMARY', 'Primary Guardian'
         SECONDARY = 'SECONDARY', 'Secondary Guardian'
-        EMERGENCY = 'EMERGENCY', 'Emergency Contact'
+        TERTIARY = 'TERTIARY', 'General Contact'
 
     resident = models.ForeignKey(
         User,
@@ -130,6 +177,7 @@ class EmergencyContact(models.Model):
         choices=Priority.choices,
         default=Priority.PRIMARY
     )
+    is_verified = models.BooleanField(default=False)
 
     class Meta:
         constraints = [
