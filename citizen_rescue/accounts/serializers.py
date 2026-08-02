@@ -11,7 +11,7 @@ from .models import (
 
 
 class OptimizedModelSerializer(serializers.ModelSerializer):
-    def update(self, instance, validated_data):
+    def update(self, instance, validated_data):  # validated_data = { "blood_group":"A+" }
         updated_fields = []
         for attr, value in validated_data.items():
             if getattr(instance, attr) != value:
