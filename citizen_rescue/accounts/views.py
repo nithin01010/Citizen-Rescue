@@ -7,13 +7,13 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .permissions import IsOwnerOrAdminOrReadOnly
 from .models import (
     User, ResidentProfile, GuardianProfile, VolunteerProfile, SecurityProfile,
-    EmergencyContact, Society, Block, Flat
+    EmergencyContact, Society, Block, Flat, SOSAlert, NotificationLog
 )
 from .serializers import (
     UserSerializer, RegisterSerializer, ResidentProfileSerializer,
     GuardianProfileSerializer, VolunteerProfileSerializer, SecurityProfileSerializer,
     EmergencyContactSerializer, SocietySerializer, BlockSerializer,
-    FlatSerializer
+    FlatSerializer, SOSAlertSerializer, NotificationLogSerializer
 )
 
 
@@ -119,4 +119,77 @@ class FlatViewSet(viewsets.ModelViewSet):
     queryset = Flat.objects.all()
     serializer_class = FlatSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdminOrReadOnly]
+
+
+class SOSAlertViewSet(viewsets.ModelViewSet):
+    serializer_class = SOSAlertSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff or user.role == User.Role.ADMIN:
+            return SOSAlert.objects.all()
+            
+        if user.role == User.Role.RESIDENT:
+            return SOSAlert.objects.filter(resident=user)
+            
+        if user.role == User.Role.GUARDIAN:
+            return SOSAlert.objects.filter(
+                resident__emergency_contacts__guardian=user
+            ).distinct()
+            
+        if user.role in [User.Role.SECURITY, User.Role.VOLUNTEER]:
+            return SOSAlert.objects.all()
+            
+        return SOSAlert.objects.none()
+
+    def perform_create(self, serializer):
+        alert = serializer.save(resident=self.request.user, status=SOSAlert.Status.OPEN)
+        
+        # 1. Notify Guardians
+        guardian_contacts = EmergencyContact.objects.filter(
+            resident=self.request.user,
+            priority=EmergencyContact.Priority.PRIMARY
+        )
+        for contact in guardian_contacts:
+            if contact.guardian:
+                NotificationLog.objects.create(
+                    alert=alert,
+                    recipient=contact.guardian,
+                    channel=NotificationLog.Channel.IN_APP,
+                    status=NotificationLog.DeliveryStatus.SENT
+                )
+                
+        # 2. Notify Security Personnel (on duty)
+        security_profiles = SecurityProfile.objects.filter(on_duty=True)
+        for profile in security_profiles:
+            NotificationLog.objects.create(
+                alert=alert,
+                recipient=profile.user,
+                channel=NotificationLog.Channel.IN_APP,
+                status=NotificationLog.DeliveryStatus.SENT
+            )
+            
+        # 3. Notify Volunteers (available)
+        volunteer_profiles = VolunteerProfile.objects.filter(is_available=True)
+        for profile in volunteer_profiles:
+            NotificationLog.objects.create(
+                alert=alert,
+                recipient=profile.user,
+                channel=NotificationLog.Channel.IN_APP,
+                status=NotificationLog.DeliveryStatus.SENT
+            )
+
+
+class NotificationLogViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = NotificationLogSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff or user.role == User.Role.ADMIN:
+            return NotificationLog.objects.all()
+        return NotificationLog.objects.filter(
+            models.Q(recipient=user) | models.Q(alert__resident=user)
+        ).distinct()
 

@@ -191,3 +191,83 @@ class EmergencyContact(models.Model):
 
     def __str__(self):
         return f"{self.resident.username}'s {self.priority} Contact: {self.name}"
+
+
+class SOSAlert(models.Model):
+    class Category(models.TextChoices):
+        ALL = 'ALL', 'Emergency'
+        MEDICAL = 'MEDICAL', 'Medical Emergency'
+        SECURITY = 'SECURITY', 'Security Emergency'
+        FIRE = 'FIRE', 'Fire Emergency'
+        ACCIDENT = 'ACCIDENT', 'Fall or Accident'
+        GENERAL = 'GENERAL', 'General Emergency'
+
+    class Status(models.TextChoices):
+        OPEN = 'OPEN', 'Open'
+        ACTIVE_RESPONSE = 'ACTIVE_RESPONSE', 'Active Response'
+        ESCALATED = 'ESCALATED', 'Escalated'
+        RESOLVED = 'RESOLVED', 'Resolved'
+        CLOSED = 'CLOSED', 'Closed'
+
+    resident = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='sos_alerts',
+        limit_choices_to={'role': User.Role.RESIDENT}
+    )
+    category = models.CharField(
+        max_length=20,
+        choices=Category.choices,
+        default=Category.GENERAL
+    )
+    message = models.TextField(blank=True, null=True)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.OPEN
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.category} Alert by {self.resident.username} at {self.created_at}"
+
+
+class NotificationLog(models.Model):
+    class Channel(models.TextChoices):
+        PUSH = 'PUSH', 'Push Notification'
+        SMS = 'SMS', 'SMS Notification'
+        EMAIL = 'EMAIL', 'Email Notification'
+        IN_APP = 'IN_APP', 'In-App Notification'
+
+    class DeliveryStatus(models.TextChoices):
+        PENDING = 'PENDING', 'Pending'
+        SENT = 'SENT', 'Sent'
+        DELIVERED = 'DELIVERED', 'Delivered'
+        FAILED = 'FAILED', 'Failed'
+
+    alert = models.ForeignKey(
+        SOSAlert,
+        on_delete=models.CASCADE,
+        related_name='notification_logs'
+    )
+    recipient = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='notification_received_logs'
+    )
+    channel = models.CharField(
+        max_length=20,
+        choices=Channel.choices
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=DeliveryStatus.choices,
+        default=DeliveryStatus.PENDING
+    )
+    sent_at = models.DateTimeField(auto_now_add=True)
+    error_message = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.channel} log for {self.recipient.username} - Status: {self.status}"

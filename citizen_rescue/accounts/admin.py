@@ -10,6 +10,8 @@ from .models import (
     Block,
     Flat,
     Society,
+    SOSAlert,
+    NotificationLog,
 )
 
 
@@ -130,3 +132,17 @@ class FlatAdmin(OptimizedAdminMixin, admin.ModelAdmin):
     @admin.display(ordering='block__society', description='Society')
     def get_society(self, obj):
         return obj.block.society.name
+
+
+@admin.register(SOSAlert)
+class SOSAlertAdmin(OptimizedAdminMixin, admin.ModelAdmin):
+    list_display = ('resident', 'category', 'status', 'created_at')
+    list_filter = ('category', 'status', 'created_at')
+    search_fields = ('resident__username', 'message')
+
+
+@admin.register(NotificationLog)
+class NotificationLogAdmin(OptimizedAdminMixin, admin.ModelAdmin):
+    list_display = ('alert', 'recipient', 'channel', 'status', 'sent_at')
+    list_filter = ('channel', 'status', 'sent_at')
+    search_fields = ('recipient__username', 'alert__resident__username')

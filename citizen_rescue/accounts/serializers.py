@@ -9,6 +9,8 @@ from .models import (
     Society,
     Block,
     Flat,
+    SOSAlert,
+    NotificationLog,
 )
 
 
@@ -217,3 +219,21 @@ class FlatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Flat
         fields = '__all__'
+
+
+class NotificationLogSerializer(serializers.ModelSerializer):
+    recipient_name = serializers.CharField(source='recipient.username', read_only=True)
+
+    class Meta:
+        model = NotificationLog
+        fields = '__all__'
+
+
+class SOSAlertSerializer(serializers.ModelSerializer):
+    resident_name = serializers.CharField(source='resident.username', read_only=True)
+    notification_logs = NotificationLogSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = SOSAlert
+        fields = '__all__'
+        read_only_fields = ['resident', 'status']

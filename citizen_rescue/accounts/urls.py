@@ -5,7 +5,8 @@ from .views import (
     RegisterView, UserProfileView,
     UserViewSet, ResidentProfileViewSet, GuardianProfileViewSet,
     VolunteerProfileViewSet, SecurityProfileViewSet, EmergencyContactViewSet,
-    SocietyViewSet, BlockViewSet, FlatViewSet
+    SocietyViewSet, BlockViewSet, FlatViewSet, SOSAlertViewSet,
+    NotificationLogViewSet
 )
 
 router = DefaultRouter()
@@ -18,6 +19,8 @@ router.register(r'emergency-contacts', EmergencyContactViewSet, basename='emerge
 router.register(r'societies', SocietyViewSet, basename='society')
 router.register(r'blocks', BlockViewSet, basename='block')
 router.register(r'flats', FlatViewSet, basename='flat')
+router.register(r'alerts', SOSAlertViewSet, basename='sosalert')
+router.register(r'notification-logs', NotificationLogViewSet, basename='notificationlog')
 
 
 urlpatterns = [
