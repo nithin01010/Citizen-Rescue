@@ -130,5 +130,3 @@ class FlatAdmin(OptimizedAdminMixin, admin.ModelAdmin):
     @admin.display(ordering='block__society', description='Society')
     def get_society(self, obj):
         return obj.block.society.name
-
-

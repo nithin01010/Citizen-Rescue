@@ -30,6 +30,8 @@ class User(AbstractUser):
 class Society(models.Model):
     name = models.CharField(max_length=100, unique=True)
     address = models.TextField()
+    registration_number = models.CharField(max_length=50, blank=True, null=True, unique=True)
+    contact_info = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
         return self.name

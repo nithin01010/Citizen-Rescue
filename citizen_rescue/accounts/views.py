@@ -6,12 +6,14 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .permissions import IsOwnerOrAdminOrReadOnly
 from .models import (
-    User, ResidentProfile, GuardianProfile, VolunteerProfile, SecurityProfile, EmergencyContact
+    User, ResidentProfile, GuardianProfile, VolunteerProfile, SecurityProfile,
+    EmergencyContact, Society, Block, Flat
 )
 from .serializers import (
     UserSerializer, RegisterSerializer, ResidentProfileSerializer,
     GuardianProfileSerializer, VolunteerProfileSerializer, SecurityProfileSerializer,
-    EmergencyContactSerializer
+    EmergencyContactSerializer, SocietySerializer, BlockSerializer,
+    FlatSerializer
 )
 
 
@@ -99,4 +101,22 @@ class EmergencyContactViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(contact)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class SocietyViewSet(viewsets.ModelViewSet):
+    queryset = Society.objects.all()
+    serializer_class = SocietySerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdminOrReadOnly]
+
+
+class BlockViewSet(viewsets.ModelViewSet):
+    queryset = Block.objects.all()
+    serializer_class = BlockSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdminOrReadOnly]
+
+
+class FlatViewSet(viewsets.ModelViewSet):
+    queryset = Flat.objects.all()
+    serializer_class = FlatSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdminOrReadOnly]
 

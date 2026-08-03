@@ -6,6 +6,8 @@ from .models import (
     VolunteerProfile,
     SecurityProfile,
     EmergencyContact,
+    Society,
+    Block,
     Flat,
 )
 
@@ -192,3 +194,26 @@ class RegisterSerializer(serializers.ModelSerializer):
                 assigned_gate=assigned_gate, shift_timing=shift_timing)
 
         return user
+
+
+class SocietySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Society
+        fields = '__all__'
+
+
+class BlockSerializer(serializers.ModelSerializer):
+    society_name = serializers.CharField(source='society.name', read_only=True)
+
+    class Meta:
+        model = Block
+        fields = '__all__'
+
+
+class FlatSerializer(serializers.ModelSerializer):
+    block_name = serializers.CharField(source='block.name', read_only=True)
+    society_name = serializers.CharField(source='block.society.name', read_only=True)
+
+    class Meta:
+        model = Flat
+        fields = '__all__'
