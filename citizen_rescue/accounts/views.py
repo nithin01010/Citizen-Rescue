@@ -145,40 +145,8 @@ class SOSAlertViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         alert = serializer.save(resident=self.request.user, status=SOSAlert.Status.OPEN)
-        
-        # 1. Notify Guardians
-        guardian_contacts = EmergencyContact.objects.filter(
-            resident=self.request.user,
-            priority=EmergencyContact.Priority.PRIMARY
-        )
-        for contact in guardian_contacts:
-            if contact.guardian:
-                NotificationLog.objects.create(
-                    alert=alert,
-                    recipient=contact.guardian,
-                    channel=NotificationLog.Channel.IN_APP,
-                    status=NotificationLog.DeliveryStatus.SENT
-                )
-                
-        # 2. Notify Security Personnel (on duty)
-        security_profiles = SecurityProfile.objects.filter(on_duty=True)
-        for profile in security_profiles:
-            NotificationLog.objects.create(
-                alert=alert,
-                recipient=profile.user,
-                channel=NotificationLog.Channel.IN_APP,
-                status=NotificationLog.DeliveryStatus.SENT
-            )
-            
-        # 3. Notify Volunteers (available)
-        volunteer_profiles = VolunteerProfile.objects.filter(is_available=True)
-        for profile in volunteer_profiles:
-            NotificationLog.objects.create(
-                alert=alert,
-                recipient=profile.user,
-                channel=NotificationLog.Channel.IN_APP,
-                status=NotificationLog.DeliveryStatus.SENT
-            )
+        from .utils.notifications import send_alert_notifications
+        send_alert_notifications(alert)
 
 
 class NotificationLogViewSet(viewsets.ReadOnlyModelViewSet):

@@ -96,17 +96,34 @@ class SOSAlertTests(APITestCase):
         self.assertEqual(alert.category, "MEDICAL")
         self.assertEqual(alert.message, "Chest pain, need help")
         
-        # Verify routing logic: 3 notification logs should be created:
-        # - Primary guardian
-        # - On-duty security
-        # - Available volunteer
+        # Verify routing logic: 8 notification logs should be created:
+        # - Primary guardian (IN_APP, SMS, EMAIL, PUSH) -> 4 logs
+        # - On-duty security (IN_APP, PUSH) -> 2 logs
+        # - Available volunteer (IN_APP, PUSH) -> 2 logs
         logs = NotificationLog.objects.filter(alert=alert)
-        self.assertEqual(logs.count(), 3)
+        self.assertEqual(logs.count(), 8)
         
-        recipients = [log.recipient for log in logs]
-        self.assertIn(self.guardian, recipients)
-        self.assertIn(self.security_user, recipients)
-        self.assertIn(self.volunteer_user, recipients)
+        # Verify recipient counts
+        guardian_logs = logs.filter(recipient=self.guardian)
+        self.assertEqual(guardian_logs.count(), 4)
+        self.assertEqual(
+            set(guardian_logs.values_list('channel', flat=True)),
+            {NotificationLog.Channel.IN_APP, NotificationLog.Channel.SMS, NotificationLog.Channel.EMAIL, NotificationLog.Channel.PUSH}
+        )
+        
+        security_logs = logs.filter(recipient=self.security_user)
+        self.assertEqual(security_logs.count(), 2)
+        self.assertEqual(
+            set(security_logs.values_list('channel', flat=True)),
+            {NotificationLog.Channel.IN_APP, NotificationLog.Channel.PUSH}
+        )
+        
+        volunteer_logs = logs.filter(recipient=self.volunteer_user)
+        self.assertEqual(volunteer_logs.count(), 2)
+        self.assertEqual(
+            set(volunteer_logs.values_list('channel', flat=True)),
+            {NotificationLog.Channel.IN_APP, NotificationLog.Channel.PUSH}
+        )
 
     def test_alert_visibility_permissions(self):
         # Trigger an alert
